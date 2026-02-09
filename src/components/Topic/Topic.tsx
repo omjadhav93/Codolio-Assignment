@@ -18,8 +18,10 @@ export default function TopicItem({ topic }: TopicProps) {
     const [newQuestionUrl, setNewQuestionUrl] = useState("");
     const [newQuestionDifficulty, setNewQuestionDifficulty] = useState<"Easy" | "Medium" | "Hard">("Easy");
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editTitle, setEditTitle] = useState(topic.title);
 
-    const { addQuestion, deleteTopic } = useQuestionStore();
+    const { addQuestion, deleteTopic, updateTopic, questions } = useQuestionStore();
 
     const {
         attributes,
@@ -35,12 +37,18 @@ export default function TopicItem({ topic }: TopicProps) {
     };
 
     const toggleTopic = () => {
-        setIsOpen(!isOpen);
-        closeNewQuestion();
+        if (!isEditing) {
+            setIsOpen(!isOpen);
+            closeNewQuestion();
+        }
     };
 
-    const completed = topic.questions.filter(q => q.isSolved).length;
-    const total = topic.questions.length;
+    const topicQuestions = topic.questionOrder
+        .map((id) => questions[id])
+        .filter(Boolean);
+
+    const completed = topicQuestions.filter(q => q.isSolved).length;
+    const total = topicQuestions.length;
     const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
     const openNewQuestion = () => {
@@ -71,6 +79,22 @@ export default function TopicItem({ topic }: TopicProps) {
         closeNewQuestion();
     };
 
+    const handleEdit = () => {
+        setIsEditing(true);
+        setEditTitle(topic.title);
+    };
+
+    const handleSave = () => {
+        if (editTitle.trim() === "") return;
+        updateTopic(topic.id, editTitle.trim());
+        setIsEditing(false);
+    };
+
+    const handleCancel = () => {
+        setIsEditing(false);
+        setEditTitle(topic.title);
+    };
+
     return (
         <div
             className="mb-4 rounded-2xl border border-slate-200 bg-white/90 shadow-sm backdrop-blur-sm transition hover:border-slate-300"
@@ -83,53 +107,123 @@ export default function TopicItem({ topic }: TopicProps) {
                 onClick={toggleTopic}
                 role="button"
             >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
                     <img
                         src="/dots-six-black.svg"
                         alt=""
-                        className="h-4 w-4 cursor-grab opacity-60"
+                        className="h-4 w-4 cursor-grab opacity-60 flex-shrink-0"
                         {...listeners}
                     />
-                    <div>
-                        <h2 className="text-sm font-medium text-slate-900">
-                            {topic.title}
-                        </h2>
-                        <p className="mt-0.5 text-xs text-slate-500">
-                            {completed}/{total} questions solved
-                        </p>
-                    </div>
+                    {isEditing ? (
+                        <input
+                            type="text"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex-1 mr-5 w-full rounded border border-slate-300 bg-white px-2 py-1 text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/20"
+                            placeholder="Topic title"
+                            autoFocus
+                        />
+                    ) : (
+                        <div>
+                            <h2 className="text-sm font-medium text-slate-900">
+                                {topic.title}
+                            </h2>
+                            <p className="mt-0.5 text-xs text-slate-500">
+                                {completed}/{total} questions solved
+                            </p>
+                        </div>
+                    )}
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <div className="w-32">
-                        <div className="mb-1 flex justify-between text-[11px] text-slate-400">
-                            <span>Progress</span>
-                            <span>{percentage}%</span>
-                        </div>
-                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                            <div
-                                className="h-full rounded-full bg-slate-900 transition-all duration-300"
-                                style={{ width: `${percentage}%` }}
-                            />
-                        </div>
-                    </div>
-                    <span className="ml-1 text-xs text-slate-400">
-                        {isOpen ? "Hide" : "Show"}
-                    </span>
-                    <button
-                        type="button"
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-full hover:bg-rose-50"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setShowDeleteConfirm(true);
-                        }}
-                    >
-                        <img
-                            src="/delete.svg"
-                            alt="Delete topic"
-                            className="h-4 w-4"
-                        />
-                    </button>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                    {!isEditing && (
+                        <>
+                            <div className="w-32">
+                                <div className="mb-1 flex justify-between text-[11px] text-slate-400">
+                                    <span>Progress</span>
+                                    <span>{percentage}%</span>
+                                </div>
+                                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                                    <div
+                                        className="h-full rounded-full bg-slate-900 transition-all duration-300"
+                                        style={{ width: `${percentage}%` }}
+                                    />
+                                </div>
+                            </div>
+                            <span className="ml-1 text-xs text-slate-400">
+                                {isOpen ? "Hide" : "Show"}
+                            </span>
+                        </>
+                    )}
+
+                    {isEditing ? (
+                        <>
+                            <button
+                                type="button"
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-full hover:bg-emerald-100 bg-emerald-50 transition-colors"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSave();
+                                }}
+                                title="Save"
+                            >
+                                <img
+                                    src="/check.svg"
+                                    alt=""
+                                    className="h-4 w-4 text-emerald-700"
+                                />
+                            </button>
+                            <button
+                                type="button"
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-full hover:bg-slate-200 bg-slate-100 transition-colors"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCancel();
+                                }}
+                                title="Cancel"
+                            >
+                                <img
+                                    src="/x.svg"
+                                    alt=""
+                                    className="h-4 w-4 text-slate-600"
+                                />
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <button
+                                type="button"
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-full hover:bg-slate-100 transition-colors"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEdit();
+                                }}
+                                title="Edit topic"
+                            >
+                                <img
+                                    src="/edit.svg"
+                                    alt=""
+                                    className="h-4 w-4 text-slate-600"
+                                />
+                            </button>
+                            <button
+                                type="button"
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-full hover:bg-rose-50"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowDeleteConfirm(true);
+                                }}
+                                title="Delete topic"
+                            >
+                                <img
+                                    src="/delete.svg"
+                                    alt="Delete topic"
+                                    className="h-4 w-4"
+                                />
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -150,7 +244,7 @@ export default function TopicItem({ topic }: TopicProps) {
                         </button>
                     </div>
 
-                    <QuestionTable topicId={topic.id} questions={topic.questions} />
+                    <QuestionTable topicId={topic.id} questions={topicQuestions} />
 
                     {newQuestion && (
                         <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/60">

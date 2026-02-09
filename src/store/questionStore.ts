@@ -1,91 +1,270 @@
 import { create } from "zustand";
 import { fetchSheetData } from "../services/sheetService";
-import type { Question, Topic } from "../types/sheet";
+import type { Question, Topic, Workspace } from "../types/sheet";
 import { arrayMove } from "../utils/reorder";
 
 interface QuestionStore {
-    topics: Topic[];
+    questions: Record<string, Question>;
+    topics: Record<string, Topic>;
+    workspaces: Workspace[];
+    activeWorkspaceId: string | null;
     loading: boolean;
     error: string | null;
+    setActiveWorkspace: (id: string) => void;
+    addWorkspace: (title: string, description: string) => void;
+    updateWorkspace: (id: string, title: string, description: string) => void;
+    deleteWorkspace: (id: string) => void;
     addTopic: (title: string) => void;
-    deleteTopic: (id: string) => void;
-    markSolved: (topicId: string, questionId: string) => void;
-    addQuestion: (topicId: string, question: Question) => void;
-    deleteQuestion: (topicId: string, questionId: string) => void;
-    loadSheet: () => Promise<void>;
+    updateTopic: (topicId: string, title: string) => void;
+    deleteTopic: (topicId: string) => void;
     reorderTopics: (from: number, to: number) => void;
+    addQuestion: (topicId: string, question: Question) => void;
+    updateQuestion: (questionId: string, updates: Partial<Omit<Question, 'id' | 'isSolved'>>) => void;
+    deleteQuestion: (topicId: string, questionId: string) => void;
+    toggleSolved: (questionId: string) => void;
     reorderQuestions: (topicId: string, from: number, to: number) => void;
+    loadSheet: () => Promise<void>;
 }
 
-export const useQuestionStore = create<QuestionStore>((set) => ({
-    topics: [],
+export const useQuestionStore = create<QuestionStore>((set, get) => ({
+    questions: {},
+    topics: {},
+    workspaces: [],
+    activeWorkspaceId: null,
     loading: false,
     error: null,
 
-    addTopic: (title) =>
+    setActiveWorkspace: (id) => set({ activeWorkspaceId: id }),
+
+    addWorkspace: (title, description) => {
+        const id = crypto.randomUUID();
+
         set((state) => ({
-            topics: [
-                ...state.topics,
+            workspaces: [
+                ...state.workspaces,
                 {
-                    id: Date.now().toString(),
+                    id,
                     title,
-                    questions: [],
+                    description,
+                    topicOrder: [],
                 },
             ],
+            activeWorkspaceId: id,
+        }));
+    },
+
+    updateWorkspace: (id, title, description) =>
+        set((state) => ({
+            workspaces: state.workspaces.map((ws) =>
+                ws.id === id ? { ...ws, title, description } : ws
+            ),
         })),
 
-    deleteTopic: (id) =>
+    deleteWorkspace: (id) =>
+        set((state) => {
+            const newWorkspaces = state.workspaces.filter((ws) => ws.id !== id);
+            const newActiveId =
+                state.activeWorkspaceId === id
+                    ? newWorkspaces.length > 0
+                        ? newWorkspaces[0].id
+                        : null
+                    : state.activeWorkspaceId;
+
+            return {
+                workspaces: newWorkspaces,
+                activeWorkspaceId: newActiveId,
+            };
+        }),
+
+    addTopic: (title) => {
+        const { activeWorkspaceId } = get();
+        if (!activeWorkspaceId) return;
+
+        const topicId = crypto.randomUUID();
+
         set((state) => ({
-            topics: state.topics.filter((t) => t.id !== id),
+            topics: {
+                ...state.topics,
+                [topicId]: {
+                    id: topicId,
+                    title,
+                    questionOrder: [],
+                },
+            },
+            workspaces: state.workspaces.map((ws) =>
+                ws.id !== activeWorkspaceId
+                    ? ws
+                    : { ...ws, topicOrder: [...ws.topicOrder, topicId] }
+            ),
+        }));
+    },
+
+    updateTopic: (topicId, title) =>
+        set((state) => ({
+            topics: {
+                ...state.topics,
+                [topicId]: {
+                    ...state.topics[topicId],
+                    title,
+                },
+            },
         })),
+
+    deleteTopic: (topicId) => {
+        const { activeWorkspaceId } = get();
+        if (!activeWorkspaceId) return;
+
+        set((state) => {
+            const { [topicId]: _, ...remainingTopics } = state.topics;
+
+            return {
+                topics: remainingTopics,
+                workspaces: state.workspaces.map((ws) =>
+                    ws.id !== activeWorkspaceId
+                        ? ws
+                        : {
+                            ...ws,
+                            topicOrder: ws.topicOrder.filter((id) => id !== topicId),
+                        }
+                ),
+            };
+        });
+    },
+
+    reorderTopics: (from, to) => {
+        const { activeWorkspaceId } = get();
+        if (!activeWorkspaceId) return;
+
+        set((state) => ({
+            workspaces: state.workspaces.map((ws) =>
+                ws.id !== activeWorkspaceId
+                    ? ws
+                    : {
+                        ...ws,
+                        topicOrder: arrayMove(ws.topicOrder, from, to),
+                    }
+            ),
+        }));
+    },
 
     addQuestion: (topicId, question) =>
         set((state) => ({
-            topics: state.topics.map((topic) =>
-                topic.id !== topicId
-                    ? topic
-                    : {
-                        ...topic,
-                        questions: [...topic.questions, question],
-                    }
-            ),
+            questions: {
+                ...state.questions,
+                [question.id]: question,
+            },
+            topics: {
+                ...state.topics,
+                [topicId]: {
+                    ...state.topics[topicId],
+                    questionOrder: [
+                        ...state.topics[topicId].questionOrder,
+                        question.id,
+                    ],
+                },
+            },
+        })),
+
+    updateQuestion: (questionId, updates) =>
+        set((state) => ({
+            questions: {
+                ...state.questions,
+                [questionId]: {
+                    ...state.questions[questionId],
+                    ...updates,
+                },
+            },
         })),
 
     deleteQuestion: (topicId, questionId) =>
-        set((state) => ({
-            topics: state.topics.map((topic) =>
-                topic.id !== topicId
-                    ? topic
-                    : {
-                        ...topic,
-                        questions: topic.questions.filter((q) => q.id !== questionId),
-                    }
-            ),
-        })),
+        set((state) => {
+            const { [questionId]: _, ...remainingQuestions } = state.questions;
 
-    markSolved: (topicId, questionId) =>
-        set((state) => ({
-            topics: state.topics.map((topic) =>
-                topic.id !== topicId
-                    ? topic
-                    : {
-                        ...topic,
-                        questions: topic.questions.map((q) =>
-                            q.id === questionId
-                                ? { ...q, isSolved: !q.isSolved }
-                                : q
+            return {
+                questions: remainingQuestions,
+                topics: {
+                    ...state.topics,
+                    [topicId]: {
+                        ...state.topics[topicId],
+                        questionOrder: state.topics[topicId].questionOrder.filter(
+                            (id) => id !== questionId
                         ),
-                    }
-            ),
+                    },
+                },
+            };
+        }),
+
+    toggleSolved: (questionId) =>
+        set((state) => ({
+            questions: {
+                ...state.questions,
+                [questionId]: {
+                    ...state.questions[questionId],
+                    isSolved: !state.questions[questionId].isSolved,
+                },
+            },
         })),
 
+    reorderQuestions: (topicId, from, to) =>
+        set((state) => ({
+            topics: {
+                ...state.topics,
+                [topicId]: {
+                    ...state.topics[topicId],
+                    questionOrder: arrayMove(
+                        state.topics[topicId].questionOrder,
+                        from,
+                        to
+                    ),
+                },
+            },
+        })),
 
     loadSheet: async () => {
         set({ loading: true, error: null });
+
         try {
-            const topics = await fetchSheetData();
-            console.log(topics);
-            set({ topics, loading: false });
+            const apiTopics = await fetchSheetData();
+
+            const questions: Record<string, Question> = {};
+            const topics: Record<string, Topic> = {};
+            const topicOrder: string[] = [];
+
+            for (const apiTopic of apiTopics) {
+                const topicId = crypto.randomUUID();
+                topicOrder.push(topicId);
+
+                const questionOrder: string[] = [];
+
+                for (const q of apiTopic.questions) {
+                    questions[q.id] = q;
+                    questionOrder.push(q.id);
+                }
+
+                topics[topicId] = {
+                    id: topicId,
+                    title: apiTopic.title,
+                    questionOrder,
+                };
+            }
+
+            const workspaceId = "striver-sde-sheet";
+
+            set({
+                questions,
+                topics,
+                workspaces: [
+                    {
+                        id: workspaceId,
+                        title: "Striver SDE Sheet",
+                        description:
+                            "Curated DSA sheet for software engineering interviews",
+                        topicOrder,
+                    },
+                ],
+                activeWorkspaceId: workspaceId,
+                loading: false,
+            });
         } catch (err) {
             set({
                 error: err instanceof Error ? err.message : "Unknown error",
@@ -93,21 +272,4 @@ export const useQuestionStore = create<QuestionStore>((set) => ({
             });
         }
     },
-
-    reorderTopics: (from, to) =>
-        set((state) => ({
-            topics: arrayMove(state.topics, from, to),
-        })),
-
-    reorderQuestions: (topicId, from, to) =>
-        set((state) => ({
-            topics: state.topics.map((topic) =>
-                topic.id !== topicId
-                    ? topic
-                    : {
-                        ...topic,
-                        questions: arrayMove(topic.questions, from, to),
-                    }
-            ),
-        })),
 }));
