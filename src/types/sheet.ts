@@ -44,7 +44,7 @@ export interface Question {
 export interface Topic {
     id: string;
     title: string;
-    questionOrder: string[];
+    questionOrder: Question[];
 }
 
 export interface Workspace {

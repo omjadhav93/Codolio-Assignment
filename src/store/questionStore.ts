@@ -159,7 +159,7 @@ export const useQuestionStore = create<QuestionStore>((set, get) => ({
                     ...state.topics[topicId],
                     questionOrder: [
                         ...state.topics[topicId].questionOrder,
-                        question.id,
+                        question,
                     ],
                 },
             },
@@ -187,7 +187,7 @@ export const useQuestionStore = create<QuestionStore>((set, get) => ({
                     [topicId]: {
                         ...state.topics[topicId],
                         questionOrder: state.topics[topicId].questionOrder.filter(
-                            (id) => id !== questionId
+                            (q) => q.id !== questionId
                         ),
                     },
                 },
@@ -234,11 +234,11 @@ export const useQuestionStore = create<QuestionStore>((set, get) => ({
                 const topicId = crypto.randomUUID();
                 topicOrder.push(topicId);
 
-                const questionOrder: string[] = [];
+                const questionOrder: Question[] = [];
 
-                for (const q of apiTopic.questions) {
+                for (const q of apiTopic.questionOrder) {
                     questions[q.id] = q;
-                    questionOrder.push(q.id);
+                    questionOrder.push(q);
                 }
 
                 topics[topicId] = {

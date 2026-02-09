@@ -20,7 +20,7 @@ export async function fetchSheetData(): Promise<Topic[]> {
         topicMap.set(topicName, {
             id: topicName,
             title: topicName,
-            questions: [],
+            questionOrder: [],
         });
     }
 
@@ -28,7 +28,7 @@ export async function fetchSheetData(): Promise<Topic[]> {
         const topic = topicMap.get(q.topic);
         if (!topic) continue;
 
-        topic.questions.push({
+        topic.questionOrder.push({
             id: q._id,
             title: q.title,
             difficulty: q.questionId.difficulty,

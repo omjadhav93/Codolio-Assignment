@@ -21,7 +21,7 @@ export default function TopicItem({ topic }: TopicProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [editTitle, setEditTitle] = useState(topic.title);
 
-    const { addQuestion, deleteTopic, updateTopic, questions } = useQuestionStore();
+    const { addQuestion, deleteTopic, updateTopic } = useQuestionStore();
 
     const {
         attributes,
@@ -43,9 +43,7 @@ export default function TopicItem({ topic }: TopicProps) {
         }
     };
 
-    const topicQuestions = topic.questionOrder
-        .map((id) => questions[id])
-        .filter(Boolean);
+    const topicQuestions = topic.questionOrder;
 
     const completed = topicQuestions.filter(q => q.isSolved).length;
     const total = topicQuestions.length;
