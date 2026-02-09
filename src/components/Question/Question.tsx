@@ -1,17 +1,38 @@
 import type { Question } from "../../types/sheet";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { useQuestionStore } from "../../store/questionStore";
 
 interface QuestionProps {
     question: Question;
     index: number;
+    topicId: string
 }
 
 export default function QuestionRow({
     question,
     index,
+    topicId
 }: QuestionProps) {
+
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+    } = useSortable({ id: question.id });
+
+    const { markSolved } = useQuestionStore();
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
     return (
-        <tr className="border-b hover:bg-gray-50">
-            <td className="px-4 py-2 text-sm text-gray-600">
+        <tr className="border-b hover:bg-gray-50" ref={setNodeRef} style={style} {...attributes}>
+            <td className="px-4 py-2 text-sm text-gray-600" {...listeners}>
                 {index + 1}
             </td>
 
@@ -50,6 +71,7 @@ export default function QuestionRow({
                     checked={question.isSolved}
                     readOnly
                     className="h-4 w-4"
+                    onChange={() => markSolved(topicId, question.id)}
                 />
             </td>
 

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { Topic } from "../../types/sheet";
 import QuestionTable from "../Question/List";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface TopicProps {
     topic: Topic;
@@ -8,6 +10,19 @@ interface TopicProps {
 
 export default function TopicItem({ topic }: TopicProps) {
     const [isOpen, setIsOpen] = useState(false);
+
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+    } = useSortable({ id: topic.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
 
     const toggleTopic = () => {
         setIsOpen(!isOpen);
@@ -18,9 +33,9 @@ export default function TopicItem({ topic }: TopicProps) {
     const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
     return (
-        <div className="border rounded-md mb-6 overflow-hidden" onClick={toggleTopic}>
-            <div className="flex justify-between">
-                <h2 className="p-4 text-xl font-semibold">{topic.title}</h2>
+        <div className="border rounded-md mb-6 overflow-hidden" ref={setNodeRef} style={style} {...attributes}>
+            <div className="flex justify-between" onClick={toggleTopic}>
+                <h2 {...listeners} className="p-4 text-xl font-semibold">{topic.title}</h2>
 
                 <div className="flex items-center gap-4 px-4">
                     <div className="w-40">
@@ -43,7 +58,7 @@ export default function TopicItem({ topic }: TopicProps) {
 
             {isOpen && (
                 <div className="p-4 bg-white">
-                    <QuestionTable questions={topic.questions} />
+                    <QuestionTable topicId={topic.id} questions={topic.questions} />
                 </div>
             )}
         </div>

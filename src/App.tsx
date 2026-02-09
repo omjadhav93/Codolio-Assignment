@@ -13,7 +13,10 @@ export default function App() {
 
   return (loading ? <p className="p-4">Loading...</p> : error ? <p className="p-4 text-red-500">{error}</p> :
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Topics</h1>
+      <div className="flex justify-between mb-4">
+        <h1 className="text-2xl font-bold">Topics</h1>
+        <button className="bg-blue-500 text-white px-4 py-2 rounded-md">Add Topic</button>
+      </div>
 
       <TopicList topics={topics} />
     </div>
