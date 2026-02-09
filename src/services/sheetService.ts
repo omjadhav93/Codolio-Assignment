@@ -35,6 +35,7 @@ export async function fetchSheetData(): Promise<Topic[]> {
             problemUrl: q.questionId.problemUrl,
             isSolved: q.isSolved,
             platform: q.questionId.platform,
+            resource: q.resource,
         });
     }
 

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { fetchSheetData } from "../services/sheetService";
-import type { Topic } from "../types/sheet";
+import type { Question, Topic } from "../types/sheet";
 import { arrayMove } from "../utils/reorder";
 
 interface QuestionStore {
@@ -10,6 +10,8 @@ interface QuestionStore {
     addTopic: (title: string) => void;
     deleteTopic: (id: string) => void;
     markSolved: (topicId: string, questionId: string) => void;
+    addQuestion: (topicId: string, question: Question) => void;
+    deleteQuestion: (topicId: string, questionId: string) => void;
     loadSheet: () => Promise<void>;
     reorderTopics: (from: number, to: number) => void;
     reorderQuestions: (topicId: string, from: number, to: number) => void;
@@ -35,6 +37,30 @@ export const useQuestionStore = create<QuestionStore>((set) => ({
     deleteTopic: (id) =>
         set((state) => ({
             topics: state.topics.filter((t) => t.id !== id),
+        })),
+
+    addQuestion: (topicId, question) =>
+        set((state) => ({
+            topics: state.topics.map((topic) =>
+                topic.id !== topicId
+                    ? topic
+                    : {
+                        ...topic,
+                        questions: [...topic.questions, question],
+                    }
+            ),
+        })),
+
+    deleteQuestion: (topicId, questionId) =>
+        set((state) => ({
+            topics: state.topics.map((topic) =>
+                topic.id !== topicId
+                    ? topic
+                    : {
+                        ...topic,
+                        questions: topic.questions.filter((q) => q.id !== questionId),
+                    }
+            ),
         })),
 
     markSolved: (topicId, questionId) =>

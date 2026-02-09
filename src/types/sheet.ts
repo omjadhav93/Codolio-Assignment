@@ -36,6 +36,7 @@ export interface Question {
     title: string;
     difficulty: "Easy" | "Medium" | "Hard";
     problemUrl: string;
+    resource: string;
     platform: string;
     isSolved: boolean;
 }

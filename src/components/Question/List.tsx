@@ -18,23 +18,38 @@ export default function QuestionTable({
 
     if (questions.length === 0) {
         return (
-            <p className="text-sm text-gray-500 italic">
-                No questions available
+            <p className="text-xs text-slate-400 italic">
+                No questions added yet.
             </p>
         );
     }
 
     return (
-        <div className="overflow-x-auto rounded-lg">
-            <table className="min-w-full border rounded-md">
-                <thead className="bg-gray-100">
+        <div className="overflow-x-auto rounded-xl border border-slate-100 bg-white/70">
+            <table className="min-w-full text-sm">
+                <thead className="border-b border-slate-100 bg-slate-50/80">
                     <tr>
-                        <th className="px-4 py-2 text-left text-sm">#</th>
-                        <th className="px-4 py-2 text-left text-sm">Question</th>
-                        <th className="px-4 py-2 text-left text-sm">Platform</th>
-                        <th className="px-4 py-2 text-left text-sm">Difficulty</th>
-                        <th className="px-4 py-2 text-center text-sm">Solved</th>
-                        <th className="px-4 py-2 text-center text-sm">Resource</th>
+                        <th className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                            #
+                        </th>
+                        <th className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                            Question
+                        </th>
+                        <th className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                            Platform
+                        </th>
+                        <th className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                            Difficulty
+                        </th>
+                        <th className="px-3 py-2 text-center text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                            Solved
+                        </th>
+                        <th className="px-3 py-2 text-center text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                            Resource
+                        </th>
+                        <th className="px-3 py-2 text-center text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                            Delete
+                        </th>
                     </tr>
                 </thead>
 
@@ -62,7 +77,8 @@ export default function QuestionTable({
                                     index={index}
                                     topicId={topicId}
                                 />
-                            ))}</SortableContext>
+                            ))}
+                        </SortableContext>
                     </DndContext>
                 </tbody>
             </table>
