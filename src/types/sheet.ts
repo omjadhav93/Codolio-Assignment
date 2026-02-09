@@ -1,17 +1,34 @@
 export interface ApiQuestion {
     _id: string;
-    title: string;
-    topic: string;
-    subTopic: string | null;
-    isSolved: boolean;
-    resource: string;
+    sheetId: string;
     questionId: {
-        name: string;
-        difficulty: "Easy" | "Medium" | "Hard";
-        problemUrl: string;
+        _id: string;
+        id: string;
         platform: string;
+        slug: string;
+        __v: number;
+        companyTags: string[];
+        createdAt: string;
+        description: string;
+        difficulty: "Easy" | "Medium" | "Hard";
+        name: string;
+        problemUrl: string;
         topics: string[];
+        updatedAt: string;
+        verified: boolean;
+        similarQuestions: string[];
     };
+    topic: string;
+    title: string;
+    subTopic: string | null;
+    resource: string;
+    session: string;
+    isPublic: boolean;
+    createdAt: string;
+    updatedAt: string;
+    popularSheets: string[];
+    isSolved: boolean;
+    questionDocumentId: string | null;
 }
 
 export interface Question {
@@ -19,6 +36,7 @@ export interface Question {
     title: string;
     difficulty: "Easy" | "Medium" | "Hard";
     problemUrl: string;
+    platform: string;
     isSolved: boolean;
 }
 
